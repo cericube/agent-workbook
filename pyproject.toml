@@ -1,0 +1,25 @@
+[tool.ruff]
+# .python-version에 맞춰 Python 3.12 문법을 기준으로 검사합니다.
+target-version = "py312"
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+# 스타일 정리는 formatter에 맡기고, 오류와 유지보수에 필요한 규칙을 검사합니다.
+select = [
+    "E4",  # import 관련 스타일 오류
+    "E7",  # 문장 관련 스타일 오류
+    "E9",  # 구문 및 실행 관련 오류
+    "F",   # 미사용 import, 정의되지 않은 이름 등 (Pyflakes)
+    "I",   # import 정렬 (isort)
+    "UP",  # Python 버전에 맞는 최신 문법 (pyupgrade)
+    "B",   # 흔한 버그와 실수 방지 (flake8-bugbear)
+    "SIM", # 불필요하게 복잡한 코드 단순화 (flake8-simplify)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pyright]
+typeCheckingMode = "basic"
