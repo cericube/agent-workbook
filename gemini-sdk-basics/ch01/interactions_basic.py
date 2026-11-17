@@ -9,27 +9,26 @@ from google.genai import types
 from google.genai.interactions import Interaction
 
 # .env의 값을 현재 프로세스의 환경 변수로 불러옵니다. 기존 환경 변수는 덮어쓰지 않습니다.
-# 경로 없이 load_dotenv()를 호출하면, 일반적으로 해당 파일이 있는 폴더부터 상위 폴더로 올라가며 .env를 찾습니다
+# load_dotenv()에 경로를 지정하지 않으면 일반적으로 현재 파일이 있는 폴더부터 상위 폴더까지 .env를 찾습니다.
 load_dotenv()
 
 # GEMINI_API_KEY 환경 변수의 API 키를 사용해 Gemini 클라이언트를 생성합니다.
 client = genai.Client(
-    # HTTP 통신에 사용할 API 버전, 제한 시간, 재시도 정책을 묶습니다.
+    # HTTP 요청에 사용할 API 버전과 제한 시간, 재시도 방식을 설정합니다.
     http_options=types.HttpOptions(
         # 요청에 사용할 API 버전을 v1으로 지정합니다.
         api_version="v1",
         # HTTP 요청의 제한 시간입니다. 밀리초 단위이므로 60_000은 60초입니다.
-        # Gemini API에 요청을 보낸 후 완성된 응답을 기다리는 시간
         timeout=60_000,
-        # 요청이 재시도 대상 오류로 실패했을 때 적용할 정책입니다.
+        # 다시 시도할 오류의 종류와 재시도 횟수, 대기 시간을 설정합니다.
         retry_options=types.HttpRetryOptions(
-            # 최초 요청을 포함해 최대 3번 시도합니다. 첫 요청 성공 시 재시도하지 않습니다.
+            # 첫 요청을 포함해 최대 3번 시도합니다. 첫 요청이 성공하면 다시 요청하지 않습니다.
             attempts=3,
-            # 첫 재시도 전 대기 시간의 초기값입니다. 단위는 초입니다.
+            # 첫 재시도까지 기다리는 시간의 기준값이며, 단위는 초입니다.
             initial_delay=1.0,
-            # 재시도 사이의 대기 시간 상한입니다. 전체 요청 시간의 상한은 아닙니다.
+            # 재시도 사이에는 최대 10초까지 기다립니다. 전체 요청에 걸리는 시간을 제한하는 값은 아닙니다.
             max_delay=10.0,
-            # 재시도를 유발할 HTTP 상태 코드입니다.
+            # 다음 HTTP 상태 코드로 요청이 실패하면 다시 시도합니다.
             # 408: 요청 시간 초과, 429: 요청 한도 초과
             # 500: 서버 내부 오류, 502: 잘못된 게이트웨이 응답
             # 503: 서비스 이용 불가, 504: 게이트웨이 시간 초과
@@ -41,8 +40,7 @@ client = genai.Client(
 try:
     print("Interactions API 호출 시작", flush=True)
 
-    # client.interactions.create()의 반환 타입이 두 가지로 정의되어 있기 때문입니다.
-    # Interaction | Stream[InteractionSSEEvent]
+    # create()는 stream 설정에 따라 일반 응답 객체나 이벤트 스트림을 반환합니다.
     interaction = client.interactions.create(
         model=os.environ["GEMINI_MODEL"],
         input="Gemini API에 대해서 아지 간단히 한 줄로 소개해 주세요",
@@ -58,15 +56,12 @@ try:
         store=False,
     )
 
-    # client.interactions.create()의 반환 타입이 두 가지로 정의되어 있기 때문입니다.
-    # Interaction | Stream[InteractionSSEEvent]
-    # 반환 타입을 검사하는 구성코드를 추가해야 타입검사 오류가 없음
-    # 타입 좁히기(Type Narrowing)
+    # isinstance로 반환값을 확인하면 타입 검사 도구도 일반 응답 객체로 판단합니다.
     # if not isinstance(interaction, Interaction):
     #     raise TypeError("예상하지 못한 스트리밍 응답입니다.")
 
-    # 또는 cast로 Interaction 타입으로 취급하라고 알려 주는 함수
-    # 정적 타입 검사 도구에 해당 타입으로 취급하도록 알려주는 역할
+    # 여기서는 cast로 타입 검사 도구에 Interaction 객체임을 알려 줍니다.
+    # cast는 실행 중에 객체의 타입을 검사하거나 변환하지 않습니다.
     interaction = cast(Interaction, interaction)
 
     print("Interactions API 호출 완료", flush=True)
